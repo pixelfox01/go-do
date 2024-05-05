@@ -34,5 +34,37 @@ func (app *application) todoCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write([]byte("Create a new todo"))
+	title := "Take a shower"
+	completed := true
+
+	id, err := app.todos.Insert(title, completed)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	http.Redirect(w, r, fmt.Sprintf("/todo/view?id=%d", id), http.StatusSeeOther)
+}
+
+func (app *application) todoDelete(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		w.Header().Set("Allow", http.MethodDelete)
+		app.clientError(w, http.StatusMethodNotAllowed)
+		return
+	}
+
+	id, err := strconv.Atoi(r.URL.Query().Get("id"))
+	if err != nil {
+		// http.Error(w, "Not Found", http.StatusNotFound)
+		app.notFound(w)
+		return
+	}
+
+	rows, err := app.todos.Delete(id)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	fmt.Fprintf(w, "Success. Rows Affected: %d\n", rows)
 }
